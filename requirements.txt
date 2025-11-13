@@ -1,9 +1,15 @@
-flask>=3.0.0
-flask-socketio>=5.3.0
-eventlet>=0.33.0
-opencv-python-headless>=4.8.0
-ultralytics>=8.0.0
-numpy>=1.24.0,<2.0.0
-torch>=2.0.0,<2.3.0
-torchvision>=0.15.0,<0.18.0
-gunicorn>=21.0.0
+Flask==2.3.3
+Flask-SocketIO==5.3.4
+eventlet==0.33.3
+opencv-python-headless==4.8.1.78
+ultralytics==8.0.196
+numpy==1.24.4
+
+# Use CPU-only PyTorch build (smaller, Render-friendly)
+torch==2.1.0+cpu
+torchvision==0.16.0+cpu
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+gunicorn==21.2.0
+python-engineio==4.8.0
+python-socketio==5.10.0
