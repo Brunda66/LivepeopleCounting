@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Crowd Monitor</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 24px;
+      padding: 40px;
+      max-width: 900px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+    }
+
+    h1 {
+      font-size: 32px;
+      color: #2d3748;
+      margin-bottom: 10px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #718096;
+      font-size: 14px;
+      margin-bottom: 30px;
+    }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      padding: 12px 28px;
+      font-size: 15px;
+      font-weight: 600;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    #startBtn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    #startBtn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    #startBtn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    #stopBtn {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+    }
+
+    #stopBtn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
+    }
+
+    #stopBtn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .settings {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #f7fafc;
+      padding: 8px 16px;
+      border-radius: 10px;
+    }
+
+    .settings label {
+      font-size: 13px;
+      color: #4a5568;
+      font-weight: 500;
+    }
+
+    .settings input {
+      width: 80px;
+      padding: 6px 10px;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: border 0.3s ease;
+    }
+
+    .settings input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .video-container {
+      position: relative;
+      background: #000;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      margin-bottom: 20px;
+    }
+
+    #annotated {
+      width: 100%;
+      height: auto;
+      display: block;
+      min-height: 400px;
+      object-fit: contain;
+    }
+
+    #video, #canvas {
+      display: none;
+    }
+
+    .status-badge {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #48bb78;
+      animation: pulse 2s infinite;
+    }
+
+    .status-dot.connecting {
+      background: #f6ad55;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.5;
+      }
+    }
+
+    .stats-container {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px 40px;
+      border-radius: 16px;
+      box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+      text-align: center;
+      flex: 1;
+      max-width: 200px;
+    }
+
+    .stat-label {
+      font-size: 13px;
+      opacity: 0.9;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-size: 48px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 400px;
+      color: #a0aec0;
+    }
+
+    .placeholder svg {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    .placeholder p {
+      font-size: 16px;
+    }
+
+    .info-note {
+      text-align: center;
+      color: #718096;
+      font-size: 13px;
+      margin-top: 20px;
+      padding: 12px;
+      background: #f7fafc;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎯 AI Crowd Monitor</h1>
+    <p class="subtitle">Real-time people detection and counting system</p>
+
+    <div class="controls">
+      <button id="startBtn">
+        <span>▶</span> Start Detection
+      </button>
+      <button id="stopBtn" disabled>
+        <span>■</span> Stop Detection
+      </button>
+      <div class="settings">
+        <label for="interval">Refresh Rate:</label>
+        <input type="number" id="interval" value="200" min="100" max="1000">
+        <span style="font-size: 12px; color: #a0aec0;">ms</span>
+      </div>
+    </div>
+
+    <div class="video-container">
+      <div id="statusBadge" class="status-badge" style="display: none;">
+        <div class="status-dot" id="statusDot"></div>
+        <span id="statusText">CONNECTING</span>
+      </div>
+      <video id="video" width="640" height="480" autoplay></video>
+      <canvas id="canvas" width="640" height="480"></canvas>
+      <img id="annotated" src="" alt="Processed Video Stream" style="display: none;">
+      <div id="placeholder" class="placeholder">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+          <circle cx="12" cy="13" r="4"></circle>
+        </svg>
+        <p>Click "Start Detection" to begin monitoring</p>
+      </div>
+    </div>
+
+    <div class="stats-container">
+      <div class="stat-card">
+        <div class="stat-label">People Count</div>
+        <div class="stat-value" id="count">0</div>
+      </div>
+    </div>
+
+    <div class="info-note">
+      💡 Ensure HTTPS is enabled for camera access. Works best with good lighting conditions.
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.min.js"></script>
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const annotatedImg = document.getElementById('annotated');
+    const countEl = document.getElementById('count');
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const intervalInput = document.getElementById('interval');
+    const placeholder = document.getElementById('placeholder');
+    const statusBadge = document.getElementById('statusBadge');
+    const statusDot = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+
+    let socket = null;
+    let stream = null;
+    let sending = false;
+    let sendInterval = 200;
+
+    function connectSocket() {
+      socket = io();
+      
+      socket.on('connect', () => {
+        console.log('Socket connected');
+        statusText.innerText = 'LIVE';
+        statusDot.classList.remove('connecting');
+      });
+      
+      socket.on('server_message', d => console.log('Server:', d));
+      
+      socket.on('frame_result', d => {
+        if (d.image) {
+          annotatedImg.src = d.image;
+          annotatedImg.style.display = 'block';
+        }
+        if (typeof d.count !== 'undefined') {
+          countEl.innerText = d.count;
+        }
+      });
+      
+      socket.on('disconnect', () => {
+        console.log('Socket disconnected');
+        statusText.innerText = 'CONNECTING';
+        statusDot.classList.add('connecting');
+      });
+    }
+
+    async function startCamera() {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { width: 640, height: 480 }, 
+          audio: false 
+        });
+        
+        video.srcObject = stream;
+        await video.play();
+        
+        sendInterval = parseInt(intervalInput.value) || 200;
+        sending = true;
+        
+        placeholder.style.display = 'none';
+        statusBadge.style.display = 'flex';
+        
+        sendFramesLoop();
+        
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+      } catch (err) {
+        alert('Could not start camera: ' + err);
+        console.error(err);
+      }
+    }
+
+    function stopCamera() {
+      sending = false;
+      
+      if (stream) {
+        stream.getTracks().forEach(t => t.stop());
+        stream = null;
+      }
+      
+      video.srcObject = null;
+      annotatedImg.src = '';
+      annotatedImg.style.display = 'none';
+      placeholder.style.display = 'flex';
+      statusBadge.style.display = 'none';
+      countEl.innerText = '0';
+      
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+    }
+
+    async function sendFramesLoop() {
+      if (!socket) connectSocket();
+      
+      while (sending) {
+        if (video.readyState === HTMLMediaElement.HAVE_ENOUGH_DATA) {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+          
+          try {
+            socket.emit('frame', { image: dataUrl });
+          } catch (e) {
+            console.warn('Socket emit failed', e);
+          }
+        }
+        
+        await new Promise(r => setTimeout(r, parseInt(intervalInput.value) || sendInterval));
+      }
+    }
+
+    startBtn.addEventListener('click', () => startCamera());
+    stopBtn.addEventListener('click', () => stopCamera());
+
+    // Auto-connect socket on page load
+    connectSocket();
+  </script>
+</body>
+</html>
