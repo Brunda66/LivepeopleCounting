@@ -85,5 +85,6 @@ def handle_frame(data):
         print("Error processing frame:", e)
 
 if __name__ == '__main__':
-    print("Starting server on http://0.0.0.0:5000")
-    socketio.run(app, host='0.0.0.0', port=5000)
+    import os
+    port = int(os.environ.get('PORT', 5000))
+    socketio.run(app, host='0.0.0.0', port=port)
