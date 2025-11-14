@@ -1,15 +1,11 @@
-Flask==2.3.3
-Flask-SocketIO==5.3.4
+flask==3.0.0
+flask-socketio==5.3.4
+python-socketio==5.9.0
 eventlet==0.33.3
 opencv-python-headless==4.8.1.78
 ultralytics==8.0.196
-numpy==1.24.4
-
-# Use CPU-only PyTorch build (smaller, Render-friendly)
-torch==2.1.0+cpu
-torchvision==0.16.0+cpu
---extra-index-url https://download.pytorch.org/whl/cpu
-
+numpy==1.24.3
+torch==2.1.0
+torchvision==0.16.0
+Pillow==10.1.0
 gunicorn==21.2.0
-python-engineio==4.8.0
-python-socketio==5.10.0
