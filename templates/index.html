@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Crowd Monitor</title>
+  <title>AI Crowd Monitor - Optimized</title>
   <style>
     * {
       margin: 0;
@@ -51,7 +51,7 @@
       gap: 12px;
       align-items: center;
       justify-content: center;
-      margin-bottom: 30px;
+      margin-bottom: 20px;
       flex-wrap: wrap;
     }
 
@@ -111,8 +111,8 @@
       font-weight: 500;
     }
 
-    .settings input {
-      width: 80px;
+    .settings input, .settings select {
+      width: 100px;
       padding: 6px 10px;
       border: 2px solid #e2e8f0;
       border-radius: 8px;
@@ -120,9 +120,35 @@
       transition: border 0.3s ease;
     }
 
-    .settings input:focus {
+    .settings input:focus, .settings select:focus {
       outline: none;
       border-color: #667eea;
+    }
+
+    .mode-toggle {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 20px;
+      padding: 12px;
+      background: #f7fafc;
+      border-radius: 12px;
+    }
+
+    .mode-toggle label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      color: #4a5568;
+    }
+
+    .mode-toggle input[type="radio"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
     }
 
     .video-container {
@@ -160,6 +186,7 @@
       display: flex;
       align-items: center;
       gap: 8px;
+      z-index: 10;
     }
 
     .status-dot {
@@ -184,24 +211,27 @@
     }
 
     .stats-container {
-      display: flex;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
       gap: 16px;
-      justify-content: center;
+      margin-bottom: 20px;
     }
 
     .stat-card {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
-      padding: 20px 40px;
+      padding: 20px;
       border-radius: 16px;
       box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
       text-align: center;
-      flex: 1;
-      max-width: 200px;
+    }
+
+    .stat-card.secondary {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
     }
 
     .stat-label {
-      font-size: 13px;
+      font-size: 12px;
       opacity: 0.9;
       text-transform: uppercase;
       letter-spacing: 1px;
@@ -209,9 +239,13 @@
     }
 
     .stat-value {
-      font-size: 48px;
+      font-size: 36px;
       font-weight: 700;
       line-height: 1;
+    }
+
+    .stat-value.small {
+      font-size: 24px;
     }
 
     .placeholder {
@@ -238,17 +272,37 @@
       text-align: center;
       color: #718096;
       font-size: 13px;
-      margin-top: 20px;
       padding: 12px;
       background: #f7fafc;
       border-radius: 10px;
+    }
+
+    .performance-tip {
+      margin-top: 15px;
+      padding: 12px;
+      background: #fef3c7;
+      border-left: 4px solid #f59e0b;
+      border-radius: 8px;
+      font-size: 13px;
+      color: #92400e;
     }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>🎯 AI Crowd Monitor</h1>
-    <p class="subtitle">Real-time people detection and counting system</p>
+    <p class="subtitle">Real-time people detection and counting system (Optimized)</p>
+
+    <div class="mode-toggle">
+      <label>
+        <input type="radio" name="mode" value="visual" checked>
+        Visual Mode (Slower)
+      </label>
+      <label>
+        <input type="radio" name="mode" value="count">
+        Count-Only Mode (Faster)
+      </label>
+    </div>
 
     <div class="controls">
       <button id="startBtn">
@@ -258,9 +312,17 @@
         <span>■</span> Stop Detection
       </button>
       <div class="settings">
-        <label for="interval">Refresh Rate:</label>
-        <input type="number" id="interval" value="200" min="100" max="1000">
+        <label for="interval">Frame Rate:</label>
+        <input type="number" id="interval" value="150" min="100" max="500" step="50">
         <span style="font-size: 12px; color: #a0aec0;">ms</span>
+      </div>
+      <div class="settings">
+        <label for="quality">Quality:</label>
+        <select id="quality">
+          <option value="0.4">Low (Fastest)</option>
+          <option value="0.6" selected>Medium</option>
+          <option value="0.8">High (Slowest)</option>
+        </select>
       </div>
     </div>
 
@@ -269,8 +331,8 @@
         <div class="status-dot" id="statusDot"></div>
         <span id="statusText">CONNECTING</span>
       </div>
-      <video id="video" width="640" height="480" autoplay></video>
-      <canvas id="canvas" width="640" height="480"></canvas>
+      <video id="video" width="480" height="360" autoplay playsinline></video>
+      <canvas id="canvas" width="480" height="360"></canvas>
       <img id="annotated" src="" alt="Processed Video Stream" style="display: none;">
       <div id="placeholder" class="placeholder">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -286,10 +348,25 @@
         <div class="stat-label">People Count</div>
         <div class="stat-value" id="count">0</div>
       </div>
+      <div class="stat-card secondary">
+        <div class="stat-label">Processing</div>
+        <div class="stat-value small" id="fps">0 FPS</div>
+      </div>
+      <div class="stat-card secondary">
+        <div class="stat-label">Latency</div>
+        <div class="stat-value small" id="latency">0 ms</div>
+      </div>
     </div>
 
     <div class="info-note">
-      💡 Ensure HTTPS is enabled for camera access. Works best with good lighting conditions.
+      💡 <strong>Performance Tips:</strong> Use Count-Only mode for 3-5x faster processing. Lower frame rate = better performance.
+      <div class="performance-tip">
+        ⚡ <strong>Troubleshooting Slow Camera:</strong><br>
+        1. Switch to "Count-Only Mode" (fastest)<br>
+        2. Set Frame Rate to 200-300ms<br>
+        3. Use "Low Quality" setting<br>
+        4. Ensure good lighting conditions
+      </div>
     </div>
   </div>
 
@@ -300,37 +377,69 @@
     const ctx = canvas.getContext('2d');
     const annotatedImg = document.getElementById('annotated');
     const countEl = document.getElementById('count');
+    const fpsEl = document.getElementById('fps');
+    const latencyEl = document.getElementById('latency');
     const startBtn = document.getElementById('startBtn');
     const stopBtn = document.getElementById('stopBtn');
     const intervalInput = document.getElementById('interval');
+    const qualitySelect = document.getElementById('quality');
     const placeholder = document.getElementById('placeholder');
     const statusBadge = document.getElementById('statusBadge');
     const statusDot = document.getElementById('statusDot');
     const statusText = document.getElementById('statusText');
+    const modeRadios = document.querySelectorAll('input[name="mode"]');
 
     let socket = null;
     let stream = null;
     let sending = false;
-    let sendInterval = 200;
+    let sendInterval = 150;
+    let currentMode = 'visual';
+    let frameCount = 0;
+    let lastFrameTime = Date.now();
 
     function connectSocket() {
-      socket = io();
+      socket = io({
+        transports: ['websocket'],
+        upgrade: false,
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        reconnectionAttempts: 5
+      });
       
       socket.on('connect', () => {
         console.log('Socket connected');
         statusText.innerText = 'LIVE';
         statusDot.classList.remove('connecting');
+        
+        // Send current mode to server
+        socket.emit('update_config', {
+          send_frames: currentMode === 'visual'
+        });
       });
       
       socket.on('server_message', d => console.log('Server:', d));
       
       socket.on('frame_result', d => {
-        if (d.image) {
+        frameCount++;
+        
+        // Update count
+        if (typeof d.count !== 'undefined') {
+          countEl.innerText = d.count;
+        }
+        
+        // Update image only in visual mode
+        if (d.image && currentMode === 'visual') {
           annotatedImg.src = d.image;
           annotatedImg.style.display = 'block';
         }
-        if (typeof d.count !== 'undefined') {
-          countEl.innerText = d.count;
+        
+        // Update performance stats
+        if (d.fps) {
+          fpsEl.innerText = d.fps + ' FPS';
+        }
+        if (d.avg_processing_time) {
+          latencyEl.innerText = Math.round(d.avg_processing_time) + ' ms';
         }
       });
       
@@ -339,19 +448,31 @@
         statusText.innerText = 'CONNECTING';
         statusDot.classList.add('connecting');
       });
+
+      socket.on('connect_error', (error) => {
+        console.error('Connection error:', error);
+      });
     }
 
     async function startCamera() {
       try {
-        stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { width: 640, height: 480 }, 
-          audio: false 
-        });
+        // Request camera with optimized constraints
+        const constraints = {
+          video: {
+            width: { ideal: 480, max: 640 },
+            height: { ideal: 360, max: 480 },
+            frameRate: { ideal: 15, max: 20 },
+            facingMode: 'user'
+          },
+          audio: false
+        };
+
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
         
         video.srcObject = stream;
         await video.play();
         
-        sendInterval = parseInt(intervalInput.value) || 200;
+        sendInterval = parseInt(intervalInput.value) || 150;
         sending = true;
         
         placeholder.style.display = 'none';
@@ -361,8 +482,10 @@
         
         startBtn.disabled = true;
         stopBtn.disabled = false;
+        intervalInput.disabled = false;
+        qualitySelect.disabled = false;
       } catch (err) {
-        alert('Could not start camera: ' + err);
+        alert('Could not start camera: ' + err.message + '\n\nMake sure you\'re using HTTPS and have granted camera permissions.');
         console.error(err);
       }
     }
@@ -381,35 +504,85 @@
       placeholder.style.display = 'flex';
       statusBadge.style.display = 'none';
       countEl.innerText = '0';
+      fpsEl.innerText = '0 FPS';
+      latencyEl.innerText = '0 ms';
+      frameCount = 0;
       
       startBtn.disabled = false;
       stopBtn.disabled = true;
+      intervalInput.disabled = false;
+      qualitySelect.disabled = false;
     }
 
     async function sendFramesLoop() {
-      if (!socket) connectSocket();
+      if (!socket || !socket.connected) {
+        connectSocket();
+        await new Promise(r => setTimeout(r, 1000)); // Wait for connection
+      }
       
       while (sending) {
-        if (video.readyState === HTMLMediaElement.HAVE_ENOUGH_DATA) {
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
-          
+        if (video.readyState === HTMLMediaElement.HAVE_ENOUGH_DATA && socket && socket.connected) {
           try {
+            // Draw frame to canvas at reduced resolution
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // Get quality setting
+            const quality = parseFloat(qualitySelect.value) || 0.6;
+            
+            // Convert to base64 with compression
+            const dataUrl = canvas.toDataURL('image/jpeg', quality);
+            
+            // Send frame
             socket.emit('frame', { image: dataUrl });
+            
           } catch (e) {
-            console.warn('Socket emit failed', e);
+            console.warn('Frame send failed:', e);
           }
         }
         
-        await new Promise(r => setTimeout(r, parseInt(intervalInput.value) || sendInterval));
+        // Dynamic interval from input
+        const currentInterval = parseInt(intervalInput.value) || sendInterval;
+        await new Promise(r => setTimeout(r, currentInterval));
       }
     }
 
+    // Event listeners
     startBtn.addEventListener('click', () => startCamera());
     stopBtn.addEventListener('click', () => stopCamera());
 
+    // Mode change handler
+    modeRadios.forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        currentMode = e.target.value;
+        
+        if (socket && socket.connected) {
+          socket.emit('update_config', {
+            send_frames: currentMode === 'visual'
+          });
+        }
+
+        // Hide/show image based on mode
+        if (currentMode === 'count') {
+          annotatedImg.style.display = 'none';
+          placeholder.style.display = 'flex';
+          placeholder.querySelector('p').textContent = 'Count-Only Mode Active (No Video)';
+        } else if (sending) {
+          placeholder.style.display = 'none';
+        }
+      });
+    });
+
+    // Update interval on change
+    intervalInput.addEventListener('change', () => {
+      sendInterval = parseInt(intervalInput.value) || 150;
+    });
+
     // Auto-connect socket on page load
     connectSocket();
+
+    // Display performance tip on load
+    console.log('%c⚡ PERFORMANCE MODE ACTIVE', 'font-size: 16px; font-weight: bold; color: #f59e0b;');
+    console.log('Using optimized settings: 480x360 @ 15fps with compression');
   </script>
 </body>
 </html>
